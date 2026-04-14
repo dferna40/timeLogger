@@ -14,6 +14,7 @@ import { formatDate, getTargetHoursForDate, formatDurationMs } from './lib/utils
 import { format, addDays, subDays, parseISO } from 'date-fns';
 
 type Tab = 'hoy' | 'resumen';
+const DAY_STATUS_EPSILON_MS = 1000;
 
 export default function App() {
   const { 
@@ -30,6 +31,28 @@ export default function App() {
 
   const selectedTasks = state.tasks.filter(t => t.date === selectedDate);
   const showActiveTask = activeTask && activeTask.date === selectedDate;
+
+  const selectedTotalMs = selectedTasks.reduce((acc, task) => {
+    if (task.duration !== undefined) return acc + task.duration;
+    if (task.id === state.activeTaskId && task.startTime) return acc + (Date.now() - task.startTime);
+    return acc;
+  }, 0);
+  const selectedTargetMs = state.workHoursConfig
+    ? getTargetHoursForDate(selectedDate, state.workHoursConfig) * 60 * 60 * 1000
+    : 0;
+  const selectedDay = parseISO(selectedDate).getDay();
+  const isSelectedWeekend = selectedDay === 0 || selectedDay === 6;
+  const isSelectedExact =
+    selectedTargetMs > 0 && Math.abs(selectedTotalMs - selectedTargetMs) <= DAY_STATUS_EPSILON_MS;
+  const selectedDatePickerTone = isSelectedWeekend
+    ? 'bg-blue-50 border-blue-200'
+    : selectedTotalMs <= 0
+      ? 'bg-gray-50 border-gray-200'
+      : isSelectedExact
+        ? 'bg-green-50 border-green-200'
+        : selectedTotalMs < selectedTargetMs
+          ? 'bg-red-50 border-red-200'
+          : 'bg-amber-50 border-amber-200';
 
   const handlePrevDay = () => setSelectedDate(format(subDays(parseISO(selectedDate), 1), 'yyyy-MM-dd'));
   const handleNextDay = () => setSelectedDate(format(addDays(parseISO(selectedDate), 1), 'yyyy-MM-dd'));
@@ -179,7 +202,7 @@ export default function App() {
                 <ChevronLeft className="w-5 h-5" />
               </button>
               
-              <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${selectedDatePickerTone}`}>
                 <CalendarIcon className="w-4 h-4 text-gray-500" />
                 <input 
                   type="date" 
