@@ -2,6 +2,7 @@ import { useState, useEffect, FormEvent } from 'react';
 import { X, Check, Edit2, Trash2, AlertCircle } from 'lucide-react';
 import { Task, AppState } from '../types';
 import { format } from 'date-fns';
+import { isValidHalfHourTimeString } from '../lib/utils';
 
 interface TaskEditModalProps {
   task: Task | null;
@@ -83,6 +84,11 @@ export function TaskEditModal({ task, state, onClose, onSave, addProject, editPr
       return;
     }
 
+    if (!isValidHalfHourTimeString(startTimeStr) || (endTimeStr && !isValidHalfHourTimeString(endTimeStr))) {
+      setError('Solo se permiten horas en punto o y media.');
+      return;
+    }
+
     // Parse times
     const [startH, startM] = startTimeStr.split(':').map(Number);
     const startObj = new Date(`${dateStr}T00:00:00`);
@@ -161,6 +167,7 @@ export function TaskEditModal({ task, state, onClose, onSave, addProject, editPr
                   type="time"
                   value={startTimeStr}
                   onChange={(e) => setStartTimeStr(e.target.value)}
+                  step={1800}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
@@ -173,6 +180,7 @@ export function TaskEditModal({ task, state, onClose, onSave, addProject, editPr
                   type="time"
                   value={endTimeStr}
                   onChange={(e) => setEndTimeStr(e.target.value)}
+                  step={1800}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required={isClosedTask}
                 />
