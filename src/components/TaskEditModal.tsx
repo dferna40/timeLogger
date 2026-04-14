@@ -2,7 +2,7 @@ import { useState, useEffect, FormEvent } from 'react';
 import { X, Check, Edit2, Trash2, AlertCircle } from 'lucide-react';
 import { Task, AppState } from '../types';
 import { format } from 'date-fns';
-import { isValidHalfHourTimeString } from '../lib/utils';
+import { isValidHalfHourTimeString, normalizeTimeStringToHalfHour } from '../lib/utils';
 
 interface TaskEditModalProps {
   task: Task | null;
@@ -38,8 +38,8 @@ export function TaskEditModal({ task, state, onClose, onSave, addProject, editPr
       setDescription(task.description);
       setBillable(task.billable);
       setNotes(task.notes || '');
-      setStartTimeStr(format(task.startTime, 'HH:mm'));
-      setEndTimeStr(task.endTime ? format(task.endTime, 'HH:mm') : '');
+      setStartTimeStr(normalizeTimeStringToHalfHour(format(task.startTime, 'HH:mm')));
+      setEndTimeStr(task.endTime ? normalizeTimeStringToHalfHour(format(task.endTime, 'HH:mm')) : '');
       setError(null);
     }
   }, [task]);
@@ -84,21 +84,24 @@ export function TaskEditModal({ task, state, onClose, onSave, addProject, editPr
       return;
     }
 
-    if (!isValidHalfHourTimeString(startTimeStr) || (endTimeStr && !isValidHalfHourTimeString(endTimeStr))) {
-      setError('Solo se permiten horas en punto o y media.');
+    const normalizedStartTimeStr = normalizeTimeStringToHalfHour(startTimeStr);
+    const normalizedEndTimeStr = endTimeStr ? normalizeTimeStringToHalfHour(endTimeStr) : '';
+
+    if (!isValidHalfHourTimeString(normalizedStartTimeStr) || (normalizedEndTimeStr && !isValidHalfHourTimeString(normalizedEndTimeStr))) {
+      setError('Introduce una hora válida.');
       return;
     }
 
     // Parse times
-    const [startH, startM] = startTimeStr.split(':').map(Number);
+    const [startH, startM] = normalizedStartTimeStr.split(':').map(Number);
     const startObj = new Date(`${dateStr}T00:00:00`);
     startObj.setHours(startH, startM, 0, 0);
     const newStartTime = startObj.getTime();
 
     let newEndTime: number | undefined = undefined;
 
-    if (endTimeStr) {
-      const [endH, endM] = endTimeStr.split(':').map(Number);
+    if (normalizedEndTimeStr) {
+      const [endH, endM] = normalizedEndTimeStr.split(':').map(Number);
       const endObj = new Date(`${dateStr}T00:00:00`);
       endObj.setHours(endH, endM, 0, 0);
       newEndTime = endObj.getTime();
@@ -129,6 +132,14 @@ export function TaskEditModal({ task, state, onClose, onSave, addProject, editPr
 
     onSave(task.id, updates);
     onClose();
+  };
+
+  const handleHalfHourTimeChange = (rawValue: string, setValue: (value: string) => void) => {
+    if (!rawValue) {
+      setValue('');
+      return;
+    }
+    setValue(normalizeTimeStringToHalfHour(rawValue));
   };
 
   return (
@@ -166,7 +177,7 @@ export function TaskEditModal({ task, state, onClose, onSave, addProject, editPr
                 <input
                   type="time"
                   value={startTimeStr}
-                  onChange={(e) => setStartTimeStr(e.target.value)}
+                  onChange={(e) => handleHalfHourTimeChange(e.target.value, setStartTimeStr)}
                   step={1800}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
@@ -179,7 +190,7 @@ export function TaskEditModal({ task, state, onClose, onSave, addProject, editPr
                 <input
                   type="time"
                   value={endTimeStr}
-                  onChange={(e) => setEndTimeStr(e.target.value)}
+                  onChange={(e) => handleHalfHourTimeChange(e.target.value, setEndTimeStr)}
                   step={1800}
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required={isClosedTask}
