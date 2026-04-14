@@ -1,0 +1,101 @@
+{
+  "tasks": [
+    {
+      "project": "Proyecto A",
+      "type": "soporte",
+      "description": "Análisis incidencia",
+      "billable": true,
+      "id": "ddb488e6-1f04-4ca9-99b8-69e53640dce2",
+      "date": "2026-04-14",
+      "startTime": 1776171780000,
+      "endTime": 1776193380000,
+      "duration": 21600000,
+      "notes": ""
+    },
+    {
+      "project": "Interno",
+      "type": "reunión",
+      "description": "Reunión de seguimiento",
+      "billable": false,
+      "id": "27f5c7a7-8e6d-4826-ad68-a0649084ac0c",
+      "date": "2026-04-14",
+      "startTime": 1776171840000,
+      "endTime": 1776179700000,
+      "duration": 7860000,
+      "notes": ""
+    },
+    {
+      "project": "Proyecto A",
+      "type": "desarrollo",
+      "description": "Desarrollo funcionalidad",
+      "billable": true,
+      "id": "397fbfb5-7e6d-4807-a7d4-5fd1a814fb60",
+      "date": "2026-04-14",
+      "startTime": 1776172140000,
+      "endTime": 1776173220000,
+      "duration": 1080000,
+      "notes": ""
+    },
+    {
+      "project": "Interno",
+      "type": "reunión",
+      "description": "Reunión de seguimiento",
+      "billable": false,
+      "id": "4a57ebf6-e310-4e27-9f83-d7f2a167e670",
+      "date": "2026-04-14",
+      "startTime": 1776172200000,
+      "notes": "",
+      "endTime": 1776172260000,
+      "duration": 60000
+    }
+  ],
+  "projects": [
+    "Proyecto A",
+    "Proyecto B",
+    "Interno"
+  ],
+  "taskTypes": [
+    "desarrollo",
+    "análisis",
+    "reunión",
+    "soporte",
+    "documentación",
+    "formación",
+    "gestión",
+    "otros"
+  ],
+  "favorites": [
+    {
+      "id": "1",
+      "project": "Interno",
+      "type": "reunión",
+      "description": "Reunión de seguimiento",
+      "billable": false
+    },
+    {
+      "id": "2",
+      "project": "",
+      "type": "desarrollo",
+      "description": "Desarrollo funcionalidad",
+      "billable": true
+    },
+    {
+      "id": "3",
+      "project": "",
+      "type": "soporte",
+      "description": "Análisis incidencia",
+      "billable": true
+    }
+  ],
+  "activeTaskId": null,
+  "workHoursConfig": {
+    "monday": 8.5,
+    "tuesday": 8.5,
+    "wednesday": 8.5,
+    "thursday": 8.5,
+    "friday": 6,
+    "saturday": 0,
+    "sunday": 0,
+    "mode": "inform"
+  }
+}
