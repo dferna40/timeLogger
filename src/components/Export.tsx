@@ -1,7 +1,7 @@
 import { Download, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
 import { Task } from '../types';
-import { formatTime, formatDurationDecimal } from '../lib/utils';
+import { formatTime, formatDurationDecimal, formatDurationMs } from '../lib/utils';
 
 interface ExportProps {
   tasks: Task[];
@@ -13,22 +13,32 @@ export function Export({ tasks, selectedDate }: ExportProps) {
   const completedTasks = tasks.filter(t => t.duration !== undefined);
 
   const generateCSV = () => {
-    const headers = ['Fecha', 'Inicio', 'Fin', 'Duración (h)', 'Proyecto', 'Tipo', 'Descripción', 'Imputable', 'Observaciones'];
+    const separator = ';';
+    const headers = ['Fecha', 'Inicio', 'Fin', 'Duración', 'Proyecto', 'Tipo', 'Descripción', 'Imputable', 'Observaciones'];
+    const escapeCSVField = (value: string) => {
+      const escaped = value.replace(/"/g, '""');
+      return `"${escaped}"`;
+    };
+
     const rows = completedTasks.map(t => [
       t.date,
       formatTime(t.startTime),
       t.endTime ? formatTime(t.endTime) : '',
-      formatDurationDecimal(t.duration || 0),
-      `"${t.project}"`,
-      `"${t.type}"`,
-      `"${t.description}"`,
+      formatDurationMs(t.duration || 0),
+      t.project,
+      t.type,
+      t.description,
       t.billable ? 'Sí' : 'No',
-      `"${t.notes || ''}"`
+      t.notes || ''
     ]);
 
-    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(field => escapeCSVField(field)).join(separator))
+      .join('\r\n');
+
+    const bom = '\uFEFF';
+    const blobWithBom = new Blob([bom, csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blobWithBom);
     const link = document.createElement('a');
     link.setAttribute('href', url);
     link.setAttribute('download', `registro_horas_${selectedDate}.csv`);
