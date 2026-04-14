@@ -12,6 +12,20 @@ export function formatTime(timestamp: number) {
   return format(timestamp, 'HH:mm');
 }
 
+export function isHalfHourMinute(minute: number): boolean {
+  return minute === 0 || minute === 30;
+}
+
+export function isValidHalfHourTimeString(time: string): boolean {
+  const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(time);
+  if (!match) return false;
+  return isHalfHourMinute(Number(match[2]));
+}
+
+export function isValidHalfHourTimestamp(timestamp: number): boolean {
+  return isHalfHourMinute(new Date(timestamp).getMinutes());
+}
+
 export function formatDate(dateString: string) {
   return format(new Date(dateString), 'dd MMM yyyy', { locale: es });
 }

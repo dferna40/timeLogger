@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Task, FavoriteTask, AppState, WorkHoursConfig } from '../types';
+import { isValidHalfHourTimestamp } from '../lib/utils';
 
 const STORAGE_KEY = 'time_logger_state';
 const DB_NAME = 'TimeLoggerDB';
@@ -366,6 +367,14 @@ export function useTimeLogger() {
 
   const updateTask = useCallback((id: string, updates: Partial<Task>) => {
     setState((prev) => {
+      if (
+        (updates.startTime !== undefined && !isValidHalfHourTimestamp(updates.startTime)) ||
+        (updates.endTime !== undefined && !isValidHalfHourTimestamp(updates.endTime))
+      ) {
+        console.warn('Rejected task update: only :00 or :30 minutes are allowed.');
+        return prev;
+      }
+
       const newProjects = (updates.project && !prev.projects.includes(updates.project))
         ? [...prev.projects, updates.project]
         : prev.projects;
@@ -407,6 +416,14 @@ export function useTimeLogger() {
 
   const addManualTask = useCallback((task: Task) => {
     setState((prev) => {
+      if (
+        !isValidHalfHourTimestamp(task.startTime) ||
+        (task.endTime !== undefined && !isValidHalfHourTimestamp(task.endTime))
+      ) {
+        console.warn('Rejected manual task: only :00 or :30 minutes are allowed.');
+        return prev;
+      }
+
       const newProjects = !prev.projects.includes(task.project)
         ? [...prev.projects, task.project]
         : prev.projects;
