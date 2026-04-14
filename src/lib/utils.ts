@@ -26,6 +26,31 @@ export function isValidHalfHourTimestamp(timestamp: number): boolean {
   return isHalfHourMinute(new Date(timestamp).getMinutes());
 }
 
+export function roundMinutesToHalfHour(minute: number): { roundedMinute: 0 | 30; hourOffset: 0 | 1 } {
+  if (minute <= 14) return { roundedMinute: 0, hourOffset: 0 };
+  if (minute <= 44) return { roundedMinute: 30, hourOffset: 0 };
+  return { roundedMinute: 0, hourOffset: 1 };
+}
+
+export function normalizeTimeStringToHalfHour(time: string): string {
+  const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(time);
+  if (!match) return time;
+
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  const { roundedMinute, hourOffset } = roundMinutesToHalfHour(minute);
+  const normalizedHour = (hour + hourOffset) % 24;
+
+  return `${String(normalizedHour).padStart(2, '0')}:${String(roundedMinute).padStart(2, '0')}`;
+}
+
+export function roundTimestampToHalfHour(timestamp: number): number {
+  const rounded = new Date(timestamp);
+  const { roundedMinute, hourOffset } = roundMinutesToHalfHour(rounded.getMinutes());
+  rounded.setHours(rounded.getHours() + hourOffset, roundedMinute, 0, 0);
+  return rounded.getTime();
+}
+
 export function formatDate(dateString: string) {
   return format(new Date(dateString), 'dd MMM yyyy', { locale: es });
 }

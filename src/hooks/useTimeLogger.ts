@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Task, FavoriteTask, AppState, WorkHoursConfig } from '../types';
-import { isValidHalfHourTimestamp } from '../lib/utils';
+import { roundTimestampToHalfHour } from '../lib/utils';
 
 const STORAGE_KEY = 'time_logger_state';
 const DB_NAME = 'TimeLoggerDB';
@@ -367,23 +367,26 @@ export function useTimeLogger() {
 
   const updateTask = useCallback((id: string, updates: Partial<Task>) => {
     setState((prev) => {
-      if (
-        (updates.startTime !== undefined && !isValidHalfHourTimestamp(updates.startTime)) ||
-        (updates.endTime !== undefined && !isValidHalfHourTimestamp(updates.endTime))
-      ) {
-        console.warn('Rejected task update: only :00 or :30 minutes are allowed.');
-        return prev;
+      const normalizedUpdates: Partial<Task> = { ...updates };
+      if (normalizedUpdates.startTime !== undefined) {
+        normalizedUpdates.startTime = roundTimestampToHalfHour(normalizedUpdates.startTime);
+      }
+      if (normalizedUpdates.endTime !== undefined) {
+        normalizedUpdates.endTime = roundTimestampToHalfHour(normalizedUpdates.endTime);
       }
 
-      const newProjects = (updates.project && !prev.projects.includes(updates.project))
-        ? [...prev.projects, updates.project]
+      const newProjects = (normalizedUpdates.project && !prev.projects.includes(normalizedUpdates.project))
+        ? [...prev.projects, normalizedUpdates.project]
         : prev.projects;
 
       let newActiveTaskId = prev.activeTaskId;
 
       const newTasks = prev.tasks.map((t) => {
         if (t.id === id) {
-          const updated = { ...t, ...updates };
+          const updated = { ...t, ...normalizedUpdates };
+          if (updated.endTime !== undefined && updated.endTime < updated.startTime) {
+            return t;
+          }
           if (updated.startTime && updated.endTime) {
             updated.duration = updated.endTime - updated.startTime;
             if (id === prev.activeTaskId) {
@@ -416,22 +419,30 @@ export function useTimeLogger() {
 
   const addManualTask = useCallback((task: Task) => {
     setState((prev) => {
-      if (
-        !isValidHalfHourTimestamp(task.startTime) ||
-        (task.endTime !== undefined && !isValidHalfHourTimestamp(task.endTime))
-      ) {
-        console.warn('Rejected manual task: only :00 or :30 minutes are allowed.');
+      const normalizedTask: Task = {
+        ...task,
+        startTime: roundTimestampToHalfHour(task.startTime),
+        endTime: task.endTime !== undefined ? roundTimestampToHalfHour(task.endTime) : undefined,
+      };
+
+      if (normalizedTask.endTime !== undefined && normalizedTask.endTime < normalizedTask.startTime) {
         return prev;
       }
 
-      const newProjects = !prev.projects.includes(task.project)
-        ? [...prev.projects, task.project]
+      if (normalizedTask.endTime !== undefined) {
+        normalizedTask.duration = normalizedTask.endTime - normalizedTask.startTime;
+      } else {
+        normalizedTask.duration = undefined;
+      }
+
+      const newProjects = !prev.projects.includes(normalizedTask.project)
+        ? [...prev.projects, normalizedTask.project]
         : prev.projects;
 
       return {
         ...prev,
         projects: newProjects,
-        tasks: [...prev.tasks, task],
+        tasks: [...prev.tasks, normalizedTask],
       };
     });
   }, []);
