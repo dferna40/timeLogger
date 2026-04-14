@@ -20,20 +20,25 @@ export function Summary({ tasks, dateStr, config, activeTaskId }: SummaryProps) 
   }, [activeTaskId]);
 
   const completedTasks = tasks.filter(t => t.duration !== undefined);
-  
-  // Calculate total duration including active task
-  const totalMs = tasks.reduce((acc, task) => {
-    if (task.duration !== undefined) {
-      return acc + task.duration;
-    }
-    if (task.id === activeTaskId && task.startTime) {
-      return acc + (now - task.startTime);
+
+  // Calculate total, billable and non-billable durations including active task
+  const { totalMs, billableMs, nonBillableMs } = tasks.reduce((acc, task) => {
+    const taskMs = task.duration !== undefined
+      ? task.duration
+      : task.id === activeTaskId && task.startTime
+        ? (now - task.startTime)
+        : 0;
+
+    if (taskMs === 0) return acc;
+
+    acc.totalMs += taskMs;
+    if (task.billable) {
+      acc.billableMs += taskMs;
+    } else {
+      acc.nonBillableMs += taskMs;
     }
     return acc;
-  }, 0);
-
-  const billableMs = completedTasks.filter(t => t.billable).reduce((acc, t) => acc + (t.duration || 0), 0);
-  const nonBillableMs = totalMs - billableMs;
+  }, { totalMs: 0, billableMs: 0, nonBillableMs: 0 });
 
   const targetHours = config ? getTargetHoursForDate(dateStr, config) : 0;
   const targetMs = targetHours * 60 * 60 * 1000;
